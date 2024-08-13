@@ -42,6 +42,7 @@ Uma API REST simples criada com Django e Django REST Framework para gerenciament
 
 A API estará disponível em http://127.0.0.1:8000/.
 
+
 8. **Funcionalidades da API:**
   Esta API utiliza Django REST Framework para fornecer os seguintes endpoints para gerenciamento de usuários:
 
