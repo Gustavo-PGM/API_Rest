@@ -1,81 +1,77 @@
-from django.shortcuts import render
-from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Usuario
 from .serializers import UsuarioSerializer
-import json
 # Create your views here.
+
 
 @api_view(['GET'])
 def pegar_usuario(request):
     if request.method == 'GET':
         usuarios = Usuario.objects.all()
-        serializador = UsuarioSerializer(usuarios, many=True)
-        return Response(serializador.data)
-        return Response(status=status.HTTTP_404_BAD_REQUEST)
+        serializer = UsuarioSerializer(usuarios, many=True)
+        return Response(serializer.data)
 
 
 @api_view(['GET'])
 def pegar_apelido(request, apelido):
     try:
         usuario = Usuario.objects.get(pk=apelido)
-    except:
-        return Response(status=status.HTTTP_404_NOT_FOUND)
+
+    except Usuario.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
     if request.method == 'GET':
-        serializador = UsuarioSerializer(usuario)
-        return Response(serializador.data)
+        serializer = UsuarioSerializer(usuario)
+        return Response(serializer.data)
 
 
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
 def gerenciar_usuario(request):
     if request.method == 'GET':
-        try:
-            if request.GET['usuario']:
-                apelido = request.GET['usuario']
-                try:
-                    usuario = Usuario.objects.get(pk=apelido)
-                except:
-                    return Response(status=status.HTTTP_404_NOT_FOUND)
-                serializador = UsuarioSerializer(usuario)
-                return Response(serializador.data)
-            else:
-                return Response(status=status.HTTTP_404_BAD_REQUEST)
-        except:
-            return Response(status=status.HTTTP_404_BAD_REQUEST)
+        apelido = request.query_params.get('usuario')
+        if apelido:
+            try:
+                usuario = Usuario.objects.get(pk=apelido)
 
+            except Usuario.DoesNotExist:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+
+            serializer = UsuarioSerializer(usuario)
+            return Response(serializer.data)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
     if request.method == 'POST':
-        novo_usuario = request.data
-        serializador = UsuarioSerializer(data=novo_usuario)
-        if serializador.is_valid():
-            serializador.save()
+        serializer = UsuarioSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
 
-            return Response(serializador.data, status=status.HTTTP_202_CREATED)
-        return Response(status=status.HTTTP_404_BAD_REQUEST)
-
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     if request.method == 'PUT':
-        apelido = request.data['apelido_usuario']
+        apelido = request.data.get('apelido_usuario')
         try:
-            atualizar = Usuario.objects.get(pk=apelido)
+            usuario = Usuario.objects.get(pk=apelido)
 
-        except:
-            return Response(status=status.HTTTP_404_NOT_FOUND)
-        serializador = UsuarioSerializer(atualizar, data=request.data)
-        if serializador.is_valid():
-            serializador.save()
+        except Usuario.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
-            return Response(serializador.data, status=status.HTTTP_202_ACCEPTED)
-        return Response(status=status.HTTTP_404_BAD_REQUEST)
+        serializer = UsuarioSerializer(usuario, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
 
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     if request.method == 'DELETE':
+        apelido = request.data.get('apelido_usuario')
         try:
-            deletar = Usuario.objects.get(pk=request.data['apelido_usuario'])
-            deletar.delete()
-            return Response(status=status.HTTTP_202_ACCEPTED)
+            usuario = Usuario.objects.get(pk=apelido)
 
-        except:
-            return Response(status=status.HTTTP_404_BAD_REQUEST)
+        except Usuario.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        usuario.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
